@@ -1,0 +1,96 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification
+import requests
+import re
+
+app = FastAPI()
+
+# Allow all origins
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+base_url = "https://google-maps-scraper-api-bnwzz3dieq-zf.a.run.app/place"
+
+model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=1)
+model.config.problem_type = "regression"
+
+model.load_state_dict(torch.load('reviewbody_scoring_v1.pth', map_location=device))
+model.to(device)
+model.eval()
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+def round_to_half_step(value):
+    return round(value * 2) / 2
+
+def preprocess_reviews(data):
+    english_and_numbers_pattern = re.compile(r'[^a-zA-Z0-9\s]')
+    english_word_pattern = re.compile(r'[a-zA-Z]+')
+
+    for review in data.get('reviews', []):
+        cleaned_text = english_and_numbers_pattern.sub('', review.get('text', ''))
+        review['text'] = cleaned_text
+
+    filtered_reviews = []
+    for review in data.get('reviews', []):
+        cleaned_text = english_and_numbers_pattern.sub('', review.get('text', ''))
+        if english_word_pattern.search(cleaned_text):
+            review['text'] = cleaned_text
+            filtered_reviews.append(review)
+    
+    return filtered_reviews
+
+def predict_score(review: str):
+    inputs = tokenizer(review, return_tensors='pt', padding='max_length', truncation=True, max_length=128)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    return outputs.logits.item() * 4 + 1
+
+def get_google_place_reviews(place_name: str, number_of_reviews: int = 10):
+    url_for_reviews = f"{base_url}/{place_name}/reviews"
+    try:
+        response = requests.get(url_for_reviews, params={"max_reviews": number_of_reviews})
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        data = response.json()
+        return preprocess_reviews(data=data), data['id'], data['name']
+    
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while accessing reviews for places api: {e}")
+        return None
+    
+def get_google_place_score_and_summary(reviews):
+    total_score = 0   
+    for review in reviews:
+        total_score += predict_score(review['text'])
+
+    return total_score / len(reviews), "In The Future There Will Be A Summary.."
+
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to the Review Scoring API!"}
+
+@app.get("/predict_score_for_text")
+async def predict_score_for_text(review: str):
+    score = predict_score(review)
+    return {"score": score}
+
+@app.get("/predict_google_place")
+async def predict_google_place(place_name: str, number_of_reviews: int = 10):
+    reviews, place_id, place_name = get_google_place_reviews(place_name=place_name, number_of_reviews=number_of_reviews)
+    if not reviews: return None
+    score, summary = get_google_place_score_and_summary(reviews=reviews)
+    return {"place_id": place_id, "place_name": place_name, "score": round_to_half_step(value=score), "summary": summary}
