@@ -1,3 +1,4 @@
+import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import torch
@@ -37,7 +38,7 @@ def round_to_half_step(value):
 def preprocess_reviews(data):
     english_and_numbers_pattern = re.compile(r'[^a-zA-Z0-9\s]')
     english_word_pattern = re.compile(r'[a-zA-Z]+')
-
+    
     for review in data.get('reviews', []):
         cleaned_text = english_and_numbers_pattern.sub('', review.get('text', ''))
         review['text'] = cleaned_text
@@ -73,11 +74,39 @@ def get_google_place_reviews(place_name: str, number_of_reviews: int = 10):
         return None
     
 def get_google_place_score_and_summary(reviews):
-    total_score = 0   
+    total_score = 0
+    total_weight = 0
+    
     for review in reviews:
-        total_score += predict_score(review['text'])
+        score = predict_score(review['text'])
+        likes_weight = (review['likes'] + 1) ** 0.5
+        reviews_by_reviewer_weight = (review['reviews_by_reviewer'] + 1) ** 0.25
+        date_formats = [
+            '%Y-%m-%dT%H:%M:%S.%fZ',
+            '%Y-%m-%dT%H:%M:%S.%f',
+            '%Y-%m-%dT%H:%M:%S',
+        ]
+        
+        datetime_obj = None
+        
+        for date_format in date_formats:
+            try:
+                datetime_obj = datetime.datetime.strptime(review['publish_date'], date_format)
+                break
+            except Exception as e:
+                pass
+        
+        if not datetime_obj:
+             publish_date_weight = 1
+        else:
+            days_ago = (datetime.datetime.now() - datetime_obj).days
+            publish_date_weight = 4 * (1/(0.01*(days_ago**1.5)+1)) + 1
+                    
+        weight = likes_weight * reviews_by_reviewer_weight * publish_date_weight
+        total_score += score * weight
+        total_weight += weight
 
-    return total_score / len(reviews), "In The Future There Will Be A Summary.."
+    return total_score / total_weight, "In The Future There Will Be A Summary.."
 
 @app.get("/")
 async def read_root():
