@@ -1,10 +1,11 @@
 import os
 import sys
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.controllers import router
 from dotenv import load_dotenv
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Ensure the app directory is in the Python path
 
@@ -23,6 +24,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        return response
+
+app.add_middleware(CustomCORSMiddleware)
 
 app.include_router(router)
 

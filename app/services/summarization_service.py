@@ -35,10 +35,10 @@ def chunk_reviews_by_token_limit(reviews, max_tokens, tokenizer):
     print(f"Chunked reviews into {len(chunks)} chunks")
     return chunks
 
-def query_together(client, payload):
+def query_together(client, payload, prompt):
     response = client.chat.completions.create(
         model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-        messages=[{"role": "user", "content": payload}],
+        messages=[{"role": "user", "content": prompt + payload}],
         max_tokens=512,
         temperature=0.7,
         top_p=0.7,
@@ -47,18 +47,22 @@ def query_together(client, payload):
         stop=["<|eot_id|>"],
         stream=False
     )
-    return response.choices[0].message.content
+    summary = response.choices[0].message.content
+    # Handle specific model response
+    if "I think there's been a misunderstanding" in summary:
+        return "The model returned an irrelevant response."
+    return summary
 
-def summarize_chunks(client, chunks, max_len):
+def summarize_chunks(client, chunks, max_len, prompt):
     summaries = []
     for idx, chunk in enumerate(chunks):
         try:
-            summary = query_together(client, chunk)
+            summary = query_together(client, chunk, prompt)
             summaries.append(summary)
             print(f"Summarized chunk {idx+1}/{len(chunks)}")
         except Exception as ex:
             print(f"Error summarizing chunk {idx+1}/{len(chunks)}: {ex}")
-    return " ".join(summaries)
+    return summaries
 
 def get_google_place_summary(reviews):
     huggingface_token = os.getenv('HUGGINGFACE_TOKEN')
@@ -72,18 +76,21 @@ def get_google_place_summary(reviews):
     chunks = chunk_reviews_by_token_limit(reviews_text, max_tokens, tokenizer)
     
     # Summarize each chunk
-    chunk_summaries = []
-    for idx, chunk in enumerate(chunks):
-        summary = summarize_chunks(client, [chunk], max_len=150)  # Adjust max_len based on the model's limit
-        chunk_summaries.append(summary)
-        print(f"Summarized review chunk {idx+1}/{len(chunks)}")
+    prompt = "Summarize the following reviews: "
+    chunk_summaries = summarize_chunks(client, chunks, max_len=150, prompt=prompt)
     
-    # Combine chunk summaries
-    combined_summary_text = " ".join(chunk_summaries)
-    print("Combined all chunk summaries")
+    # If there's only one chunk, return its summary
+    if len(chunk_summaries) == 1:
+        final_summary = chunk_summaries[0]
+    else:
+        # Combine chunk summaries with '|' separator
+        combined_summary_text = " | ".join(chunk_summaries)
+        print("Combined all chunk summaries")
+        
+        # Summarize the combined summaries
+        final_prompt = "Each summary separated by '|' is generated for about 500 reviews. Summarize the summaries into one summary: "
+        final_summary = query_together(client, combined_summary_text, final_prompt)
     
-    # Summarize the combined summaries if needed
-    final_summary = summarize_chunks(client, [combined_summary_text], max_len=150)
     print("Final summary completed")
     print(final_summary)
     return final_summary
