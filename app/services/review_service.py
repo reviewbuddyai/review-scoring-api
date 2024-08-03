@@ -67,7 +67,7 @@ def get_google_place_score(reviews):
     for review in reviews:
         score = predict_score(review['text'])
         likes_weight = (review['likes'] + 1) ** 0.5
-        reviews_by_reviewer_weight = (review['reviews_by_reviewer'] + 1) ** 0.25
+        reviews_by_reviewer_weight = 1 if review['reviews_by_reviewer'] is None else (review['reviews_by_reviewer'] + 1) ** 0.25
         date_formats = [
             '%Y-%m-%dT%H:%M:%S.%fZ',
             '%Y-%m-%dT%H:%M:%S.%f',

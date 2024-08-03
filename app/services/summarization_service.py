@@ -76,7 +76,7 @@ def get_google_place_summary(reviews):
     chunks = chunk_reviews_by_token_limit(reviews_text, max_tokens, tokenizer)
     
     # Summarize each chunk
-    prompt = "Summarize the following reviews: "
+    prompt = "Summarize the following reviews which came from multiple reviewers: "
     chunk_summaries = summarize_chunks(client, chunks, max_len=150, prompt=prompt)
     
     # If there's only one chunk, return its summary
