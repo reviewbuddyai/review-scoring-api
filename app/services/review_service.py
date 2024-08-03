@@ -4,7 +4,6 @@ import torch
 import requests
 import re
 from transformers import BertTokenizer, BertForSequenceClassification
-from app.services.summarization_service import get_google_place_summary
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
