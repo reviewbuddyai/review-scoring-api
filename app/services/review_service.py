@@ -1,23 +1,9 @@
 import datetime
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification
 import requests
 import re
-
-app = FastAPI()
-
-# Allow all origins
-origins = ["*"]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from transformers import BertTokenizer, BertForSequenceClassification
+from app.services.summarization_service import get_google_place_summary
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -71,9 +57,9 @@ def get_google_place_reviews(place_name: str, number_of_reviews: int = 10):
     
     except requests.exceptions.RequestException as e:
         print(f"An error occurred while accessing reviews for places api: {e}")
-        return None
+        return None, None, None
     
-def get_google_place_score_and_summary(reviews):
+def get_google_place_score(reviews):
     total_score = 0
     total_weight = 0
     
@@ -106,20 +92,4 @@ def get_google_place_score_and_summary(reviews):
         total_score += score * weight
         total_weight += weight
 
-    return total_score / total_weight, "In The Future There Will Be A Summary.."
-
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to the Review Scoring API!"}
-
-@app.get("/predict_score_for_text")
-async def predict_score_for_text(review: str):
-    score = predict_score(review)
-    return {"score": score}
-
-@app.get("/predict_google_place")
-async def predict_google_place(place_name: str, number_of_reviews: int = 10):
-    reviews, place_id, place_name = get_google_place_reviews(place_name=place_name, number_of_reviews=number_of_reviews)
-    if not reviews: return None
-    score, summary = get_google_place_score_and_summary(reviews=reviews)
-    return {"place_id": place_id, "place_name": place_name, "score": round_to_half_step(value=score), "summary": summary}
+    return total_score / total_weight
