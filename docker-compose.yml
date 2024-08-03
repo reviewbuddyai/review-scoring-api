@@ -11,3 +11,5 @@ services:
       - .:/app
     environment:
       - PORT=8080
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
