@@ -1,6 +1,6 @@
 # app/services/__init__.py
 from .review_service import (
-    round_to_half_step,
+    round_to_one_decimal_place,
     preprocess_reviews,
     predict_score,
     get_google_place_reviews,

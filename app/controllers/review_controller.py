@@ -13,7 +13,7 @@ async def predict_google_place(place_name: str, number_of_reviews: int = 10):
     reviews, place_id, place_name = review_service.get_google_place_reviews(place_name=place_name, number_of_reviews=number_of_reviews)
     if not reviews: return None
     score = review_service.get_google_place_score(reviews=reviews)
-    return {"place_id": place_id, "place_name": place_name, "score": review_service.round_to_half_step(value=score)}
+    return {"place_id": place_id, "place_name": place_name, "score": review_service.round_to_one_decimal_place(value=score)}
 
 @router.get("/summary_for_place")
 async def summary_for_place(place_name: str, number_of_reviews: int = 10):

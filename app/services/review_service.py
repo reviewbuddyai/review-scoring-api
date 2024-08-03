@@ -1,4 +1,5 @@
 import datetime
+import math
 import torch
 import requests
 import re
@@ -18,8 +19,9 @@ model.eval()
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-def round_to_half_step(value):
-    return round(value * 2) / 2
+def round_to_one_decimal_place(value):
+    return math.floor(value * 10) / 10
+
 
 def preprocess_reviews(data):
     english_and_numbers_pattern = re.compile(r'[^a-zA-Z0-9\s]')
