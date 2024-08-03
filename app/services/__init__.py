@@ -4,8 +4,7 @@ from .review_service import (
     preprocess_reviews,
     predict_score,
     get_google_place_reviews,
-    get_google_place_score,
-    get_google_place_summary
+    get_google_place_score
 )
 
 from .summarization_service import (
