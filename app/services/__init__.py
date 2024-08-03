@@ -11,5 +11,6 @@ from .summarization_service import (
     initialize_clients,
     chunk_reviews_by_token_limit,
     query_together,
-    summarize_chunks
+    summarize_chunks,
+    get_google_place_summary
 )
