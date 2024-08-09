@@ -9,7 +9,7 @@ async def predict_score_for_text(review: str):
     return {"score": score}
 
 @router.get("/get_review_data")
-async def get_review_data(place_name: str, number_of_reviews: int = 10):
+async def get_review_data(place_name: str, number_of_reviews: int = 50):
     reviews, place_id, place_name = review_service.get_google_place_reviews(place_name=place_name, number_of_reviews=number_of_reviews)
     if not reviews: return { "score": 0, "summary": f"Reviews not found for place: {place_name}"}
     score = review_service.get_google_place_score(reviews=reviews)

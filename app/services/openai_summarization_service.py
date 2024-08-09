@@ -74,7 +74,9 @@ def get_google_place_summary(reviews):
     
     # Summarize each chunk
     prompt = """Summarize the following reviews which came from multiple reviewers in the following format,
-      (if there is nothing that fits the category based on the reviews then leave it empty):
+      (if there is nothing that fits the category based on the reviews then leave it empty,
+      make sure that Recommended Items are always specific items, and not 
+      recommendations for types of items, can only be: name of item dont write "Specific item 1"):
       **Summary:**
        * **Positive Reviews:**
             - postive topic from reviews number 1
@@ -86,9 +88,10 @@ def get_google_place_summary(reviews):
        * **Negative Reviews:**
             - negative topic, or constructive criticism 1
 
-       * **Reccomended Dishes:**
-            - most reccommended dish
-            - slightly less reccomended dish
+       * **Recommended Items:**
+            - most recommended item
+            - slightly less recommended item
+            - more items you would recommend, could be drinks, could be dishes, could be something else
        """
     chunk_summaries = summarize_chunks(client, chunks, prompt)
     
