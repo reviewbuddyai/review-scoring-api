@@ -87,8 +87,8 @@ def get_google_place_summary(reviews):
             - negative topic, or constructive criticism 1
 
        * **Reccomended Dishes:**
-            1. most reccommended dish
-            2. slightly less reccomended dish
+            - most reccommended dish
+            - slightly less reccomended dish
        """
     chunk_summaries = summarize_chunks(client, chunks, prompt)
     
@@ -101,7 +101,7 @@ def get_google_place_summary(reviews):
         print("Combined all chunk summaries")
         
         # Summarize the combined summaries
-        final_prompt = "Each summary separated by '|' is generated for about 500 reviews. Summarize the summaries into one summary: "
+        final_prompt = "Each summary separated by '|' is generated for about 500 reviews. Summarize the summaries into one summary and keep the same format: "
         final_summary = query_openai(client, final_prompt + combined_summary_text)
     
     print("Final summary completed")
