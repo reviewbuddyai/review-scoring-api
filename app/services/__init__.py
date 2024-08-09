@@ -7,10 +7,14 @@ from .review_service import (
     get_google_place_score
 )
 
-from .summarization_service import (
+from .llama_summarization_service import (
     initialize_clients,
     chunk_reviews_by_token_limit,
     query_together,
     summarize_chunks,
+    get_google_place_summary
+)
+
+from .openai_summarization_service import (
     get_google_place_summary
 )

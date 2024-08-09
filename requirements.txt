@@ -5,3 +5,5 @@ huggingface_hub
 together
 python-dotenv
 uvicorn
+openai
+tiktoken
