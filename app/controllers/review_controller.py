@@ -14,4 +14,11 @@ async def get_review_data(place_name: str, number_of_reviews: int = 10):
     if not reviews: return { "score": 0, "summary": f"Reviews not found for place: {place_name}"}
     score = review_service.get_google_place_score(reviews=reviews)
     summary = openai_summarization_service.get_google_place_summary(reviews)
-    return {"place_id": place_id, "place_name": place_name, "score": review_service.round_to_one_decimal_place(value=score), "summary": summary}
+    return {
+            "place_id": place_id,
+            "place_name": place_name,
+            "score": review_service.round_to_one_decimal_place(value=score),
+            "summary": summary,
+            "best_review": {"score": 5, "review": "twas a funtime"},
+            "worst_review": {"score": 0, "review": "dafuq was this"} 
+            }
