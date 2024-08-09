@@ -1,8 +1,8 @@
 fastapi
 torch==2.2.2
 transformers==4.42.4
-# huggingface_hub
-# together
+huggingface_hub
+together
 python-dotenv
 uvicorn
 openai
